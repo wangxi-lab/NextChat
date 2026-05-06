@@ -31,7 +31,6 @@ import {
   showConfirm,
   showToast,
 } from "./ui-lib";
-import { ModelConfigList } from "./model-config";
 
 import { IconButton } from "./button";
 import {
@@ -645,6 +644,22 @@ export function Settings() {
   const builtinCount = SearchService.count.builtin;
   const customCount = promptStore.getUserPrompts().length ?? 0;
   const [shouldShowPromptModal, setShowPromptModal] = useState(false);
+
+  function activateGenericAgentModel() {
+    updateConfig((config) => {
+      config.modelConfig.model = "generic-agent" as any;
+      config.modelConfig.providerName = ServiceProvider.GenericAgent;
+    });
+
+    const chatState = useChatStore.getState();
+    const session = chatState.currentSession();
+    chatState.updateTargetSession(session, (session) => {
+      session.mask.modelConfig.model = "generic-agent" as any;
+      session.mask.modelConfig.providerName = ServiceProvider.GenericAgent;
+      session.mask.syncGlobalConfig = false;
+    });
+    showToast("GenericAgent");
+  }
 
   const showUsage = accessStore.isAuthorized();
   useEffect(() => {
@@ -1459,44 +1474,200 @@ export function Settings() {
     </>
   );
 
-  const ai302ConfigComponent = accessStore.provider === ServiceProvider["302.AI"] && (
+  const ai302ConfigComponent = accessStore.provider ===
+    ServiceProvider["302.AI"] && (
     <>
       <ListItem
-          title={Locale.Settings.Access.AI302.Endpoint.Title}
-          subTitle={
-            Locale.Settings.Access.AI302.Endpoint.SubTitle +
-            AI302.ExampleEndpoint
+        title={Locale.Settings.Access.AI302.Endpoint.Title}
+        subTitle={
+          Locale.Settings.Access.AI302.Endpoint.SubTitle + AI302.ExampleEndpoint
+        }
+      >
+        <input
+          aria-label={Locale.Settings.Access.AI302.Endpoint.Title}
+          type="text"
+          value={accessStore.ai302Url}
+          placeholder={AI302.ExampleEndpoint}
+          onChange={(e) =>
+            accessStore.update(
+              (access) => (access.ai302Url = e.currentTarget.value),
+            )
           }
-        >
-          <input
-            aria-label={Locale.Settings.Access.AI302.Endpoint.Title}
-            type="text"
-            value={accessStore.ai302Url}
-            placeholder={AI302.ExampleEndpoint}
-            onChange={(e) =>
-              accessStore.update(
-                (access) => (access.ai302Url = e.currentTarget.value),
-              )
-            }
-          ></input>
-        </ListItem>
-        <ListItem
-          title={Locale.Settings.Access.AI302.ApiKey.Title}
-          subTitle={Locale.Settings.Access.AI302.ApiKey.SubTitle}
-        >
-          <PasswordInput
-            aria-label={Locale.Settings.Access.AI302.ApiKey.Title}
-            value={accessStore.ai302ApiKey}
-            type="text"
-            placeholder={Locale.Settings.Access.AI302.ApiKey.Placeholder}
-            onChange={(e) => {
-              accessStore.update(
-                (access) => (access.ai302ApiKey = e.currentTarget.value),
-              );
-            }}
-          />
-        </ListItem>
-      </>
+        ></input>
+      </ListItem>
+      <ListItem
+        title={Locale.Settings.Access.AI302.ApiKey.Title}
+        subTitle={Locale.Settings.Access.AI302.ApiKey.SubTitle}
+      >
+        <PasswordInput
+          aria-label={Locale.Settings.Access.AI302.ApiKey.Title}
+          value={accessStore.ai302ApiKey}
+          type="text"
+          placeholder={Locale.Settings.Access.AI302.ApiKey.Placeholder}
+          onChange={(e) => {
+            accessStore.update(
+              (access) => (access.ai302ApiKey = e.currentTarget.value),
+            );
+          }}
+        />
+      </ListItem>
+    </>
+  );
+
+  const genericAgentConfigComponent = accessStore.provider ===
+    ServiceProvider.GenericAgent && (
+    <>
+      <ListItem
+        title="GenericAgent Endpoint"
+        subTitle="本地 GenericAgent Adapter 地址，例如 http://127.0.0.1:8765"
+      >
+        <input
+          aria-label="GenericAgent Endpoint"
+          type="text"
+          value={accessStore.genericAgentUrl}
+          placeholder="http://127.0.0.1:8765"
+          onChange={(e) =>
+            accessStore.update(
+              (access) => (access.genericAgentUrl = e.currentTarget.value),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem
+        title="GenericAgent Token"
+        subTitle="可选，本地 Adapter 鉴权令牌"
+      >
+        <PasswordInput
+          aria-label="GenericAgent Token"
+          value={accessStore.genericAgentToken}
+          type="text"
+          placeholder="optional"
+          onChange={(e) => {
+            accessStore.update(
+              (access) => (access.genericAgentToken = e.currentTarget.value),
+            );
+          }}
+        />
+      </ListItem>
+
+      <ListItem
+        title="File System"
+        subTitle="授权后允许 GenericAgent 访问指定目录"
+      >
+        <input
+          aria-label="File System"
+          type="checkbox"
+          checked={accessStore.genericAgentAllowFileSystem}
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentAllowFileSystem = e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem
+        title="Allowed Dirs"
+        subTitle="允许访问的目录，多个目录用英文逗号或换行分隔"
+      >
+        <input
+          aria-label="Allowed Dirs"
+          type="text"
+          value={accessStore.genericAgentAllowedDirs}
+          placeholder="E:\\code\\workspace"
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentAllowedDirs = e.currentTarget.value),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem title="Shell" subTitle="授权后允许 GenericAgent 自动执行命令">
+        <input
+          aria-label="Shell"
+          type="checkbox"
+          checked={accessStore.genericAgentAllowShell}
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentAllowShell = e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem
+        title="Command Allowlist"
+        subTitle="可选，多个命令前缀用英文逗号或换行分隔"
+      >
+        <input
+          aria-label="Command Allowlist"
+          type="text"
+          value={accessStore.genericAgentCommandAllowlist}
+          placeholder="git,npm,yarn,python"
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentCommandAllowlist = e.currentTarget.value),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem
+        title="Command Denylist"
+        subTitle="危险命令前缀，多个用英文逗号或换行分隔"
+      >
+        <input
+          aria-label="Command Denylist"
+          type="text"
+          value={accessStore.genericAgentCommandDenylist}
+          placeholder="rm,del,format,shutdown"
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentCommandDenylist = e.currentTarget.value),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem title="Browser" subTitle="授权后允许网页访问或浏览器自动化">
+        <input
+          aria-label="Browser"
+          type="checkbox"
+          checked={accessStore.genericAgentAllowBrowser}
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentAllowBrowser = e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+
+      <ListItem
+        title="Screen Control"
+        subTitle="授权后允许屏幕、鼠标、键盘自动化"
+      >
+        <input
+          aria-label="Screen Control"
+          type="checkbox"
+          checked={accessStore.genericAgentAllowScreenControl}
+          onChange={(e) =>
+            accessStore.update(
+              (access) =>
+                (access.genericAgentAllowScreenControl =
+                  e.currentTarget.checked),
+            )
+          }
+        ></input>
+      </ListItem>
+    </>
   );
 
   return (
@@ -1833,11 +2004,13 @@ export function Settings() {
                       aria-label={Locale.Settings.Access.Provider.Title}
                       value={accessStore.provider}
                       onChange={(e) => {
+                        const provider = e.target.value as ServiceProvider;
                         accessStore.update(
-                          (access) =>
-                            (access.provider = e.target
-                              .value as ServiceProvider),
+                          (access) => (access.provider = provider),
                         );
+                        if (provider === ServiceProvider.GenericAgent) {
+                          activateGenericAgentModel();
+                        }
                       }}
                     >
                       {Object.entries(ServiceProvider).map(([k, v]) => (
@@ -1863,6 +2036,7 @@ export function Settings() {
                   {XAIConfigComponent}
                   {chatglmConfigComponent}
                   {siliconflowConfigComponent}
+                  {genericAgentConfigComponent}
                   {ai302ConfigComponent}
                 </>
               )}
@@ -1913,17 +2087,6 @@ export function Settings() {
               }
             ></input>
           </ListItem>
-        </List>
-
-        <List>
-          <ModelConfigList
-            modelConfig={config.modelConfig}
-            updateConfig={(updater) => {
-              const modelConfig = { ...config.modelConfig };
-              updater(modelConfig);
-              config.update((config) => (config.modelConfig = modelConfig));
-            }}
-          />
         </List>
 
         {shouldShowPromptModal && (

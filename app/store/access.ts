@@ -62,11 +62,13 @@ const DEFAULT_SILICONFLOW_URL = isApp
 
 const DEFAULT_AI302_URL = isApp ? AI302_BASE_URL : ApiPath["302.AI"];
 
+const DEFAULT_GENERIC_AGENT_URL = ApiPath.GenericAgent as string;
+
 const DEFAULT_ACCESS_STATE = {
   accessCode: "",
   useCustomConfig: false,
 
-  provider: ServiceProvider.OpenAI,
+  provider: ServiceProvider.GenericAgent,
 
   // openai
   openaiUrl: DEFAULT_OPENAI_URL,
@@ -138,6 +140,20 @@ const DEFAULT_ACCESS_STATE = {
   // 302.AI
   ai302Url: DEFAULT_AI302_URL,
   ai302ApiKey: "",
+
+  // GenericAgent
+  genericAgentUrl: DEFAULT_GENERIC_AGENT_URL,
+  genericAgentToken: "",
+  genericAgentModel: "generic-agent",
+  genericAgentUseRagSkill: false,
+  genericAgentSelectedSkill: "",
+  genericAgentAllowFileSystem: true,
+  genericAgentAllowedDirs: "",
+  genericAgentAllowShell: true,
+  genericAgentCommandAllowlist: "",
+  genericAgentCommandDenylist: "",
+  genericAgentAllowBrowser: true,
+  genericAgentAllowScreenControl: true,
 
   // server config
   needCode: true,
@@ -226,6 +242,10 @@ export const useAccessStore = createPersistStore(
       return ensure(get(), ["siliconflowApiKey"]);
     },
 
+    isValidGenericAgent() {
+      return ensure(get(), ["genericAgentUrl"]);
+    },
+
     isAuthorized() {
       this.fetch();
 
@@ -245,6 +265,7 @@ export const useAccessStore = createPersistStore(
         this.isValidXAI() ||
         this.isValidChatGLM() ||
         this.isValidSiliconFlow() ||
+        this.isValidGenericAgent() ||
         !this.enabledAccessControl() ||
         (this.enabledAccessControl() && ensure(get(), ["accessCode"]))
       );
@@ -284,7 +305,7 @@ export const useAccessStore = createPersistStore(
   }),
   {
     name: StoreKey.Access,
-    version: 2,
+    version: 3,
     migrate(persistedState, version) {
       if (version < 2) {
         const state = persistedState as {
@@ -295,6 +316,15 @@ export const useAccessStore = createPersistStore(
         };
         state.openaiApiKey = state.token;
         state.azureApiVersion = "2023-08-01-preview";
+      }
+
+      if (version < 3) {
+        const state = persistedState as typeof DEFAULT_ACCESS_STATE;
+        state.genericAgentAllowFileSystem = true;
+        state.genericAgentAllowShell = true;
+        state.genericAgentAllowBrowser = true;
+        state.genericAgentAllowScreenControl = true;
+        state.genericAgentAllowedDirs = "";
       }
 
       return persistedState as any;

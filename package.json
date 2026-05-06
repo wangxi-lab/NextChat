@@ -13,6 +13,7 @@
     "export:dev": "concurrently -r \"yarn mask:watch\"  \"cross-env BUILD_MODE=export BUILD_APP=1 next dev\"",
     "app:dev": "concurrently -r \"yarn mask:watch\" \"yarn tauri dev\"",
     "app:build": "yarn mask && yarn tauri build",
+    "package:windows": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1",
     "app:clear": "yarn tauri dev",
     "prompts": "node ./scripts/fetch-prompts.mjs",
     "prepare": "husky install",

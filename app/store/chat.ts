@@ -102,7 +102,7 @@ export const BOT_HELLO: ChatMessage = createMessage({
 });
 
 function createEmptySession(): ChatSession {
-  return {
+  const session: ChatSession = {
     id: nanoid(),
     topic: DEFAULT_TOPIC,
     memoryPrompt: "",
@@ -117,6 +117,10 @@ function createEmptySession(): ChatSession {
 
     mask: createEmptyMask(),
   };
+  session.mask.modelConfig.model = "generic-agent" as any;
+  session.mask.modelConfig.providerName = ServiceProvider.GenericAgent;
+  session.mask.syncGlobalConfig = false;
+  return session;
 }
 
 function getSummarizeModel(
@@ -411,11 +415,17 @@ export const useChatStore = createPersistStore(
       ) {
         const session = get().currentSession();
         const modelConfig = session.mask.modelConfig;
+        const accessStore = useAccessStore.getState();
+        const effectiveModelConfig = {
+          ...modelConfig,
+          model: accessStore.genericAgentModel || "generic-agent",
+          providerName: ServiceProvider.GenericAgent,
+        };
 
         // MCP Response no need to fill template
         let mContent: string | MultimodalContent[] = isMcpResponse
           ? content
-          : fillTemplateWith(content, modelConfig);
+          : fillTemplateWith(content, effectiveModelConfig);
 
         if (!isMcpResponse && attachImages && attachImages.length > 0) {
           mContent = [
@@ -436,7 +446,7 @@ export const useChatStore = createPersistStore(
         const botMessage: ChatMessage = createMessage({
           role: "assistant",
           streaming: true,
-          model: modelConfig.model,
+          model: effectiveModelConfig.model,
         });
 
         // get recent messages
@@ -456,11 +466,11 @@ export const useChatStore = createPersistStore(
           ]);
         });
 
-        const api: ClientApi = getClientApi(modelConfig.providerName);
+        const api: ClientApi = getClientApi(effectiveModelConfig.providerName);
         // make request
         api.llm.chat({
           messages: sendMessages,
-          config: { ...modelConfig, stream: true },
+          config: { ...effectiveModelConfig, stream: true },
           onUpdate(message) {
             botMessage.streaming = true;
             if (message) {

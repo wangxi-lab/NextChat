@@ -75,6 +75,7 @@ export enum ApiPath {
   DeepSeek = "/api/deepseek",
   SiliconFlow = "/api/siliconflow",
   "302.AI" = "/api/302ai",
+  GenericAgent = "http://127.0.0.1:8765",
 }
 
 export enum SlotID {
@@ -134,6 +135,7 @@ export enum ServiceProvider {
   DeepSeek = "DeepSeek",
   SiliconFlow = "SiliconFlow",
   "302.AI" = "302.AI",
+  GenericAgent = "GenericAgent",
 }
 
 // Google API safety settings, see https://ai.google.dev/gemini-api/docs/safety-settings
@@ -161,6 +163,7 @@ export enum ModelProvider {
   DeepSeek = "DeepSeek",
   SiliconFlow = "SiliconFlow",
   "302.AI" = "302.AI",
+  GenericAgent = "GenericAgent",
 }
 
 export const Stability = {
@@ -493,7 +496,7 @@ export const VISION_MODEL_REGEXES = [
   /o3/,
   /o4-mini/,
   /grok-4/i,
-  /gpt-5/
+  /gpt-5/,
 ];
 
 export const EXCLUDE_VISION_MODEL_REGEXES = [/claude-3-5-haiku-20241022/];
@@ -561,7 +564,7 @@ const googleModels = [
   "gemini-2.0-pro-exp",
   "gemini-2.0-pro-exp-02-05",
   "gemini-2.5-pro-preview-06-05",
-  "gemini-2.5-pro"
+  "gemini-2.5-pro",
 ];
 
 const anthropicModels = [
@@ -909,6 +912,18 @@ export const DEFAULT_MODELS = [
       sorted: 15,
     },
   })),
+  {
+    name: "generic-agent",
+    displayName: "GenericAgent",
+    available: true,
+    sorted: seq++,
+    provider: {
+      id: "GenericAgent",
+      providerName: "GenericAgent",
+      providerType: "genericagent",
+      sorted: 16,
+    },
+  },
 ] as const;
 
 export const CHAT_PAGE_SIZE = 15;

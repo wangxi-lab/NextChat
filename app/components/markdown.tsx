@@ -305,9 +305,31 @@ function _MarkDownContent(props: { content: string }) {
               </video>
             );
           }
-          const isInternal = /^\/#/i.test(href);
+          const isAnchor = /^#/i.test(href);
+          const isInternal = /^\/#/i.test(href) || isAnchor;
           const target = isInternal ? "_self" : aProps.target ?? "_blank";
-          return <a {...aProps} target={target} />;
+          const anchorId =
+            isAnchor && aProps.title === "kb-source-anchor"
+              ? href.slice(1)
+              : undefined;
+          return (
+            <a
+              {...aProps}
+              id={anchorId}
+              target={target}
+              onClick={(event) => {
+                if (!isAnchor) {
+                  aProps.onClick?.(event);
+                  return;
+                }
+                event.preventDefault();
+                document.getElementById(href.slice(1))?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }}
+            />
+          );
         },
       }}
     >

@@ -1,10 +1,13 @@
 import webpack from "webpack";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const mode = process.env.BUILD_MODE ?? "standalone";
 console.log("[Next] build mode", mode);
 
 const disableChunk = !!process.env.DISABLE_CHUNK || mode === "export";
 console.log("[Next] build with chunk: ", !disableChunk);
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -24,9 +27,19 @@ const nextConfig = {
       child_process: false,
     };
 
+    if (mode === "export") {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "../mcp/actions": path.resolve(dirname, "app/mcp/actions.export.ts"),
+      };
+    }
+
     return config;
   },
   output: mode,
+  eslint: {
+    ignoreDuringBuilds: mode === "export",
+  },
   images: {
     unoptimized: mode === "export",
   },

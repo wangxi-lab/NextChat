@@ -67,8 +67,24 @@
     transition: width ease 0.3s;
     align-items: center;
     height: 16px;
-    width: var(--icon-width);
+    width: var(--full-width);
     overflow: hidden;
+
+    &[data-active="true"] {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: var(--white);
+      width: var(--full-width);
+
+      .text {
+        opacity: 1;
+        transform: translate(0);
+      }
+
+      .icon {
+        filter: invert(1);
+      }
+    }
 
     .text {
       white-space: nowrap;
@@ -98,6 +114,68 @@
       justify-content: center;
     }
   }
+}
+
+.skill-picker {
+  position: relative;
+}
+
+.skill-menu {
+  position: absolute;
+  left: 0;
+  bottom: 34px;
+  z-index: 20;
+  min-width: 240px;
+  max-width: 360px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 6px;
+  border: var(--border-in-light);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.skill-menu-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--black);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  small {
+    max-width: 100%;
+    color: #888;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover,
+  &-selected {
+    border-color: var(--primary);
+    background: var(--hover-color);
+  }
+}
+
+.skill-menu-empty {
+  padding: 10px;
+  color: #888;
+  font-size: 12px;
 }
 
 .prompt-toast {
