@@ -29,6 +29,10 @@ export class GenericAgentApi implements LLMApi {
   async chat(options: ChatOptions) {
     const accessStore = useAccessStore.getState();
     const session = useChatStore.getState().currentSession();
+    const chatMode = accessStore.genericAgentChatMode || "";
+    const selectedSkill =
+      chatMode === "skill" ? accessStore.genericAgentSelectedSkill || "" : "";
+    const useRag = chatMode === "rag";
     const controller = new AbortController();
     options.onController?.(controller);
 
@@ -49,17 +53,15 @@ export class GenericAgentApi implements LLMApi {
         content: getMessageTextContent(message as any),
       })),
       model: accessStore.genericAgentModel || options.config.model,
+      mode: chatMode,
       skill: {
-        name: accessStore.genericAgentSelectedSkill || "",
-        mode: accessStore.genericAgentSelectedSkill ? "force" : "off",
+        name: selectedSkill,
+        mode: selectedSkill ? "force" : "off",
       },
       rag: {
-        enabled: accessStore.genericAgentSelectedSkill === "volc_ark_rag",
-        strict: accessStore.genericAgentSelectedSkill === "volc_ark_rag",
-        mode:
-          accessStore.genericAgentSelectedSkill === "volc_ark_rag"
-            ? "force"
-            : "off",
+        enabled: useRag,
+        strict: useRag,
+        mode: useRag ? "force" : "off",
       },
       permissions: {
         file_system: {

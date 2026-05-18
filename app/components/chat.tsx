@@ -137,6 +137,18 @@ type GenericAgentSkill = {
   description?: string;
 };
 
+type GenericAgentChatMode = "" | "llm" | "rag" | "code-agent" | "skill";
+
+const GENERIC_AGENT_MODE_LABELS: Record<
+  Exclude<GenericAgentChatMode, "">,
+  string
+> = {
+  llm: "模型直答",
+  rag: "知识库问答",
+  "code-agent": "codeAgent问答",
+  skill: "skill问答",
+};
+
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
@@ -516,6 +528,8 @@ export function ChatActions(props: {
   const accessStore = useAccessStore();
   const [skills, setSkills] = useState<GenericAgentSkill[]>([]);
   const [showSkillMenu, setShowSkillMenu] = useState(false);
+  const selectedMode =
+    (accessStore.genericAgentChatMode || "") as GenericAgentChatMode;
   const selectedSkill = accessStore.genericAgentSelectedSkill || "";
   const selectedSkillTitle =
     skills.find((skill) => skill.name === selectedSkill)?.title || selectedSkill;
@@ -538,40 +552,76 @@ export function ChatActions(props: {
       });
   }, [accessStore.genericAgentToken, accessStore.genericAgentUrl]);
 
+  const selectMode = (mode: GenericAgentChatMode) => {
+    accessStore.update((access) => {
+      access.genericAgentChatMode = mode;
+      access.genericAgentUseRagSkill = mode === "rag";
+      if (mode !== "skill") {
+        access.genericAgentSelectedSkill = "";
+      }
+    });
+    if (mode !== "skill") {
+      setShowSkillMenu(false);
+    }
+  };
+
   const selectSkill = (name: string) => {
     accessStore.update((access) => {
+      access.genericAgentChatMode = name ? "skill" : "";
       access.genericAgentSelectedSkill = name;
-      access.genericAgentUseRagSkill = name === "volc_ark_rag";
+      access.genericAgentUseRagSkill = false;
     });
     setShowSkillMenu(false);
   };
 
   return (
-    <div className={styles["chat-input-actions"]}>
+    <div
+      className={clsx(
+        styles["chat-input-actions"],
+        styles["chat-mode-actions"],
+      )}
+    >
+      <ChatAction
+        onClick={() => selectMode(selectedMode === "llm" ? "" : "llm")}
+        text={GENERIC_AGENT_MODE_LABELS.llm}
+        icon={<BrainIcon />}
+        active={selectedMode === "llm"}
+      />
+      <ChatAction
+        onClick={() => selectMode(selectedMode === "rag" ? "" : "rag")}
+        text={GENERIC_AGENT_MODE_LABELS.rag}
+        icon={<PluginIcon />}
+        active={selectedMode === "rag"}
+      />
+      <ChatAction
+        onClick={() =>
+          selectMode(selectedMode === "code-agent" ? "" : "code-agent")
+        }
+        text={GENERIC_AGENT_MODE_LABELS["code-agent"]}
+        icon={<RobotIcon />}
+        active={selectedMode === "code-agent"}
+      />
       <div className={styles["skill-picker"]}>
         <ChatAction
-          onClick={() => setShowSkillMenu((show) => !show)}
-          text={selectedSkill ? `Skill: ${selectedSkillTitle}` : "Skill"}
+          onClick={() => {
+            selectMode("skill");
+            setShowSkillMenu((show) => !show);
+          }}
+          text={
+            selectedMode === "skill" && selectedSkill
+              ? `${GENERIC_AGENT_MODE_LABELS.skill}: ${selectedSkillTitle}`
+              : GENERIC_AGENT_MODE_LABELS.skill
+          }
           icon={<PluginIcon />}
-          active={!!selectedSkill}
+          active={selectedMode === "skill"}
         />
         {showSkillMenu && (
           <div className={styles["skill-menu"]}>
-            <button
-              className={clsx(styles["skill-menu-item"], {
-                [styles["skill-menu-item-selected"]]: !selectedSkill,
-              })}
-              onClick={() => selectSkill("")}
-              type="button"
-            >
-              <span>通用问答</span>
-              <small>不强制使用 Skill</small>
-            </button>
             {skills.map((skill) => (
               <button
                 className={clsx(styles["skill-menu-item"], {
                   [styles["skill-menu-item-selected"]]:
-                    selectedSkill === skill.name,
+                    selectedMode === "skill" && selectedSkill === skill.name,
                 })}
                 key={skill.name}
                 onClick={() => selectSkill(skill.name)}
@@ -1030,6 +1080,22 @@ function _Chat() {
   };
 
   const accessStore = useAccessStore();
+  const selectedGenericAgentMode =
+    (accessStore.genericAgentChatMode || "") as GenericAgentChatMode;
+  const selectedGenericAgentSkill = accessStore.genericAgentSelectedSkill || "";
+  const selectedGenericAgentModeLabel =
+    selectedGenericAgentMode === "skill" && selectedGenericAgentSkill
+      ? `${GENERIC_AGENT_MODE_LABELS.skill}: ${selectedGenericAgentSkill}`
+      : selectedGenericAgentMode
+        ? GENERIC_AGENT_MODE_LABELS[selectedGenericAgentMode]
+        : "";
+  const clearGenericAgentMode = () => {
+    accessStore.update((access) => {
+      access.genericAgentChatMode = "";
+      access.genericAgentSelectedSkill = "";
+      access.genericAgentUseRagSkill = false;
+    });
+  };
   const [speechStatus, setSpeechStatus] = useState(false);
   const [speechLoading, setSpeechLoading] = useState(false);
 
@@ -1821,10 +1887,29 @@ function _Chat() {
                 })}
                 htmlFor="chat-input"
               >
+                {selectedGenericAgentModeLabel && (
+                  <div className={styles["chat-input-mode-chip"]}>
+                    <span>{selectedGenericAgentModeLabel}</span>
+                    <button
+                      aria-label="取消问答模式"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        clearGenericAgentMode();
+                        inputRef.current?.focus();
+                      }}
+                      type="button"
+                    >
+                      X
+                    </button>
+                  </div>
+                )}
                 <textarea
                   id="chat-input"
                   ref={inputRef}
-                  className={styles["chat-input"]}
+                  className={clsx(styles["chat-input"], {
+                    [styles["chat-input-with-mode"]]:
+                      !!selectedGenericAgentModeLabel,
+                  })}
                   placeholder={Locale.Chat.Input(submitKey)}
                   onInput={(e) => onInput(e.currentTarget.value)}
                   value={userInput}

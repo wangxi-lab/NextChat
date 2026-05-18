@@ -145,6 +145,7 @@ const DEFAULT_ACCESS_STATE = {
   genericAgentUrl: DEFAULT_GENERIC_AGENT_URL,
   genericAgentToken: "",
   genericAgentModel: "generic-agent",
+  genericAgentChatMode: "",
   genericAgentUseRagSkill: false,
   genericAgentSelectedSkill: "",
   genericAgentAllowFileSystem: true,
