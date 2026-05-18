@@ -49,3 +49,8 @@ masks.json
 
 # mcp config
 app/mcp/mcp_config.json
+
+# local Goose bundle and Codex run artifacts
+/src-tauri/bin/*
+!/src-tauri/bin/.gitkeep
+/.codex-run/
