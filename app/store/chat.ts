@@ -30,6 +30,7 @@ import {
 } from "../constant";
 import Locale, { getLang } from "../locales";
 import { prettyObject } from "../utils/format";
+import { askGoose } from "../utils/goose";
 import { createPersistStore } from "../utils/store";
 import { estimateTokenLength } from "../utils/token";
 import { ModelConfig, ModelType, useAppConfig } from "./config";
@@ -525,6 +526,55 @@ export const useChatStore = createPersistStore(
             );
           },
         });
+      },
+
+      async onLocalAgentInput(content: string) {
+        const session = get().currentSession();
+        const textContent = content.trim();
+
+        if (!textContent) return;
+
+        const userMessage: ChatMessage = createMessage({
+          role: "user",
+          content: textContent,
+        });
+
+        const botMessage: ChatMessage = createMessage({
+          role: "assistant",
+          streaming: true,
+          model: "goose" as ModelType,
+        });
+
+        get().updateTargetSession(session, (session) => {
+          session.messages = session.messages.concat([userMessage, botMessage]);
+        });
+
+        try {
+          const response = await askGoose(textContent);
+          botMessage.streaming = false;
+          botMessage.content = response.content;
+          botMessage.date = new Date().toLocaleString();
+          get().updateTargetSession(session, (session) => {
+            session.messages = session.messages.concat();
+          });
+          get().onNewMessage(botMessage, session);
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : String(error || "Unknown error");
+          botMessage.streaming = false;
+          botMessage.isError = true;
+          userMessage.isError = true;
+          botMessage.content = prettyObject({
+            error: true,
+            message,
+          });
+          get().updateTargetSession(session, (session) => {
+            session.messages = session.messages.concat();
+          });
+          console.error("[Goose] failed ", error);
+        }
       },
 
       getMemoryPrompt() {

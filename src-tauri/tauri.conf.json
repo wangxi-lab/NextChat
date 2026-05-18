@@ -81,7 +81,7 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": ["bin/**/*", "../goose.config.json"],
       "shortDescription": "NextChat App",
       "targets": "all",
       "windows": {

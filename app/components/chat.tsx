@@ -78,6 +78,11 @@ import {
 } from "../utils";
 
 import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
+import {
+  getGooseStatus,
+  isGooseSupported,
+  startGooseAgent,
+} from "@/app/utils/goose";
 
 import dynamic from "next/dynamic";
 
@@ -503,6 +508,7 @@ export function ChatActions(props: {
   setShowShortcutKeyModal: React.Dispatch<React.SetStateAction<boolean>>;
   setUserInput: (input: string) => void;
   setShowChatSidePanel: React.Dispatch<React.SetStateAction<boolean>>;
+  onLocalAgentSubmit: () => void;
 }) {
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -648,6 +654,12 @@ export function ChatActions(props: {
           onClick={props.showPromptHints}
           text={Locale.Chat.InputActions.Prompt}
           icon={<PromptIcon />}
+        />
+
+        <ChatAction
+          onClick={props.onLocalAgentSubmit}
+          text="本地Agent"
+          icon={<McpToolIcon />}
         />
 
         <ChatAction
@@ -1067,6 +1079,14 @@ function _Chat() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
 
+  useEffect(() => {
+    if (isGooseSupported()) {
+      startGooseAgent().catch((error) => {
+        console.error("[Goose] failed to start agent", error);
+      });
+    }
+  }, []);
+
   // chat commands shortcuts
   const chatCommands = useChatCommand({
     new: () => chatStore.newSession(),
@@ -1121,6 +1141,40 @@ function _Chat() {
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
     setAutoScroll(true);
+  };
+
+  const doLocalAgentSubmit = async () => {
+    const input = userInput.trim();
+    if (!input) return;
+
+    if (!isGooseSupported()) {
+      showToast("本地Agent仅在桌面端可用");
+      return;
+    }
+
+    if (!isEmpty(attachImages)) {
+      showToast("本地Agent暂不支持图片输入");
+      return;
+    }
+
+    setIsLoading(true);
+    setUserInput("");
+    setPromptHints([]);
+    setAutoScroll(true);
+    chatStore.setLastInput(input);
+
+    try {
+      const status = await getGooseStatus();
+      if (!status.available) {
+        showToast(status.error || "未找到 goose");
+        return;
+      }
+
+      await chatStore.onLocalAgentInput(input);
+    } finally {
+      setIsLoading(false);
+      if (!isMobileScreen) inputRef.current?.focus();
+    }
   };
 
   const onPromptSelect = (prompt: RenderPrompt) => {
@@ -2067,6 +2121,7 @@ function _Chat() {
                 setShowShortcutKeyModal={setShowShortcutKeyModal}
                 setUserInput={setUserInput}
                 setShowChatSidePanel={setShowChatSidePanel}
+                onLocalAgentSubmit={doLocalAgentSubmit}
               />
               <label
                 className={clsx(styles["chat-input-panel-inner"], {

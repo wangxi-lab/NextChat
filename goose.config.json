@@ -1,0 +1,9 @@
+{
+  "provider": "MiniMax",
+  "providerType": "openai",
+  "host": "127.0.0.1",
+  "port": 32123,
+  "tls": false,
+  "secretKey": "nextchat-local-goose-agent",
+  "env": {}
+}

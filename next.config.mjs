@@ -1,4 +1,5 @@
 import webpack from "webpack";
+import path from "path";
 
 const mode = process.env.BUILD_MODE ?? "standalone";
 console.log("[Next] build mode", mode);
@@ -20,6 +21,15 @@ const nextConfig = {
       );
     }
 
+    if (mode === "export") {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /(^|[\\/])mcp[\\/]actions$/,
+          path.resolve(process.cwd(), "app/mcp/actions-static.ts"),
+        ),
+      );
+    }
+
     config.resolve.fallback = {
       child_process: false,
     };
@@ -29,6 +39,9 @@ const nextConfig = {
   output: mode,
   images: {
     unoptimized: mode === "export",
+  },
+  eslint: {
+    ignoreDuringBuilds: mode === "export",
   },
   experimental: {
     forceSwcTransforms: true,
