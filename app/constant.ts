@@ -37,6 +37,7 @@ export const CHATGLM_BASE_URL = "https://open.bigmodel.cn";
 export const SILICONFLOW_BASE_URL = "https://api.siliconflow.cn";
 
 export const AI302_BASE_URL = "https://api.302.ai";
+export const GOOSE_BASE_URL = "http://127.0.0.1:3000";
 
 export const CACHE_URL_PREFIX = "/api/cache";
 export const UPLOAD_URL = `${CACHE_URL_PREFIX}/upload`;
@@ -75,6 +76,7 @@ export enum ApiPath {
   DeepSeek = "/api/deepseek",
   SiliconFlow = "/api/siliconflow",
   "302.AI" = "/api/302ai",
+  Goose = "/api/goose",
 }
 
 export enum SlotID {
@@ -134,6 +136,7 @@ export enum ServiceProvider {
   DeepSeek = "DeepSeek",
   SiliconFlow = "SiliconFlow",
   "302.AI" = "302.AI",
+  Goose = "Goose",
 }
 
 // Google API safety settings, see https://ai.google.dev/gemini-api/docs/safety-settings
@@ -161,6 +164,7 @@ export enum ModelProvider {
   DeepSeek = "DeepSeek",
   SiliconFlow = "SiliconFlow",
   "302.AI" = "302.AI",
+  Goose = "Goose",
 }
 
 export const Stability = {
